@@ -1,0 +1,287 @@
+---
+title: "Sales Dashboard and Predictive App"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+    css: www/stlyes-sheet.css
+runtime: shiny
+---
+```{r setup, include=FALSE}
+# 1.0 LIBRARIES
+library(flexdashboard)
+
+library(readr)
+library(tidyverse)
+library(tidyquant)
+
+library(plotly)
+library(shiny)
+library(shinyWidgets)
+library(shinyjs)
+
+library(rsample)
+library(parsnip)
+
+
+
+```
+
+```{r}
+sales_pipeline <- read.csv(file = "00_dataset/sales_pipeline.csv", header = TRUE, sep = ",")
+
+sales_teams <- read.csv(file = "00_dataset/sales_teams.csv", header = TRUE, sep = ",")
+
+products_tbl <- read.csv(file = "00_dataset/products.csv", header = TRUE, sep = ",")
+
+train_tbl <- sales_pipeline %>% 
+    
+    filter(deal_stage != "Engaging") %>% 
+    
+    filter(deal_stage != "Prospecting") %>% 
+    
+    mutate(product = case_when(
+        product == "GTXPro" ~ "GTX Pro",
+        TRUE ~ product
+    )) %>% 
+    left_join(sales_teams, by = "sales_agent") %>%
+    left_join(products_tbl, by = "product") %>% 
+    
+    separate(col = product,
+             into = str_c("model_", 1:3),
+             sep = " ",
+             remove = FALSE,
+             fill = "right")
+
+#scripts
+source("00_scripts/01_separate_product.R")
+source("00_scripts/plot_functions.R")
+
+#model
+model_xgboost <- read_rds("00_models/model_xgboost.rds")
+```
+
+GENERAL INFO
+=======================================================================
+Column {.sidebar}
+-------------------------------------------------------------------------------------
+
+```{r}
+dateRangeInput(
+    inputId = "date_range_picker",
+    label = "Input The Date Range",
+    start = min(train_tbl$close_date),
+    end = max(train_tbl$close_date),
+    min = min(train_tbl$close_date),,
+    max = max(train_tbl$close_date)
+    
+)
+
+pickerInput(
+    inputId = "picker_deal_stage",
+    label = "Select the Deal Stage",
+    choices = unique(train_tbl$deal_stage),
+    selected = unique(train_tbl$deal_stage), # Default to selecting all options
+    multiple = TRUE
+)
+
+
+br()
+hr()
+br()
+
+actionButton(inputId = "apply", label = "Apply", icon = icon("play"))
+
+actionButton(inputId = "reset", label = "Reset", icon = icon("sync"))
+
+observeEvent(eventExpr = input$reset, handlerExpr = {
+    
+    updateDateRangeInput(session = session, inputId = "date_range_picker", start = min(train_tbl$close_date), end = max(train_tbl$close_date))
+    
+    updatePickerInput(session = session, inputId = "picker_deal_stage", selected = unique(train_tbl$deal_stage))
+    
+    delay(ms = 300, expr = {
+    click(id = "apply")
+  })
+    
+})
+
+
+```
+
+
+Column {data-width=550}
+-----------------------------------------------------------------------
+### Chart A
+
+```{r}
+
+### Applying the reactivity grade 2
+
+reactive_train_tbl <- eventReactive(eventExpr = input$apply, valueExpr = {
+    
+    train_tbl %>%
+        mutate(close_date = ymd(close_date)) %>% 
+        filter(close_date %>% between(left = input$date_range_picker[1],
+                                      right = input$date_range_picker[2])) %>%
+        filter(deal_stage %in% input$picker_deal_stage)
+    
+}, ignoreNULL = FALSE)
+```
+
+
+```{r}
+
+output$regional_plot <- renderPlotly(expr = {
+    reactive_train_tbl() %>%
+        regional_performance_plot()
+})
+
+plotlyOutput(outputId = "regional_plot")
+
+# train_tbl %>% regional_performance_plot()
+
+
+```
+
+### Chart D
+```{r}
+
+output$sales_time_plot <- renderPlotly(expr = {
+    reactive_train_tbl() %>% 
+        sales_over_time_plot()
+    
+})
+
+plotlyOutput(outputId = "sales_time_plot")
+
+# train_tbl %>% sales_over_time_plot()
+```
+
+
+Column {data-width=300}
+-----------------------------------------------------------------------
+### Chart B
+
+```{r}
+
+output$deal_plot <- renderPlotly(expr = {
+    
+    reactive_train_tbl() %>% 
+        deal_stage_plot()
+})
+
+plotlyOutput(outputId = "deal_plot")
+
+#train_tbl %>% deal_stage_plot()
+
+```
+
+### Chart C
+
+<div style="height: 350px; overflow-y: auto;">
+```{r}
+
+output$sales_agent_performance <- renderPlotly(expr = {
+    reactive_train_tbl() %>%
+        sales_agent_performance_plot() %>%
+        layout(
+            height = 700,  # Explicitly set the height to match the container
+            margin = list(b = 50)  # Add a 50-pixel margin at the bottom
+        )  # Explicitly set the height to match the container
+})
+
+plotlyOutput(outputId = "sales_agent_performance", height = "700px")
+```
+</div>
+
+
+PREDICTIVE PART
+===========================================================================================
+Column {.sidebar}
+-------------------------------------------------------------------------------------
+
+```{r}
+useShinyjs(rmd = TRUE)
+
+pickerInput(
+    inputId = "picker_sales_agent",
+    label = h4("Select The Sales Agent"),
+    choices = unique(train_tbl$sales_agent),
+    selected = "Donn Cantrell"
+)
+pickerInput(
+    inputId = "picker_product",
+    label = h4("Select The Product"),
+    choices = unique(train_tbl$product),
+    selected = "MG Special"
+)
+## I need it to automatically select the Product series
+
+
+
+br()
+hr()
+br()
+
+actionButton(inputId = "apply_2", label = "Apply", icon = icon("play"))
+
+actionButton(inputId = "reset_2", label = "Reset", icon = icon("sync"))
+
+observeEvent(eventExpr = input$reset_2, handlerExpr = {
+    
+    updatePickerInput(session = session, inputId = "picker_sales_agent", selected =  "Donn Cantrell")
+    
+    updatePickerInput(session = session, inputId = "picker_product", selected =  "MG Special")
+    
+  delay(ms = 300, expr = {
+    click(id = "apply_2")
+  })
+    
+})
+
+```
+
+
+```{r}
+
+new_sales_tbl <- eventReactive(eventExpr = input$apply_2, valueExpr = {
+     generate_new_sales(
+                product = input$picker_product,
+                sales_agent = input$picker_sales_agent,
+                model_1 = "MG",
+                model_2 = "Special",
+                .ml_model = model_xgboost)
+}, ignoreNULL = FALSE)
+
+
+
+```
+
+
+Column {data-width = 550}
+---------------------------------------------------------------------------------------
+
+### PREDICTIVE CHART
+```{r}
+output$predictive_chart <- renderPlotly({
+    bind_sales_prediction(sales_pipeline, new_sales_tbl()) %>%
+    plot_sales_prediction()
+})
+
+plotlyOutput(outputId = "predictive_chart")
+
+```
+
+
+Column {data-width = 300}
+--------------------------------------------------------------------------------------------
+
+### PREDICTION TABLE
+```{r}
+
+renderTable({
+  new_sales_tbl() %>% format_table()
+})
+
+```

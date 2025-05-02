@@ -1,0 +1,28 @@
+{
+    "id": "908A48B6",
+    "path": null,
+    "project_path": null,
+    "type": "object_explorer",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1746050389240.0,
+    "source_on_save": false,
+    "relative_order": 5,
+    "properties": {
+        "id": "d3d48cc096f64e54a6581a8e8cef31dd",
+        "name": "model_xgboost",
+        "title": "model_xgboost",
+        "language": "R",
+        "source_window_id": "",
+        "Source": "Source"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 738734375083,
+    "encoding": "",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1746050389240,
+    "read_only": false,
+    "read_only_alternatives": []
+}

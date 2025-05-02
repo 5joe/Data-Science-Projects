@@ -1,0 +1,59 @@
+.navbar-brand {
+    font-family: "Montserrat", Sans-Serif;
+}
+
+
+.navbar-inverse {
+    background-color: #36648B;
+    border-color: skyblue;
+}
+
+
+.btn-default {
+    color: #ffffff;
+    background-color: #36648B;
+    border-color: skyblue;
+}
+
+.btn-default {
+    color: #ffffff;
+    background-color: #36648B;
+    border-color: skyblue;
+}
+
+
+.btn-default {
+    color: #ffffff;
+    background-color: steelblue;
+    border-color: skyblue
+}
+
+.btn-default:focus,.btn-default.focus {
+    color: #ffffff;
+    background-color: steelblue;
+    border-color: skyblue
+}
+
+.btn-default:hover {
+    color: #ffffff;
+    background-color: #6699CC;
+    border-color: lightblue
+}
+
+.btn-default:active,.btn-default.active,.open>.dropdown-toggle.btn-default {
+    color: #ffffff;
+    background-color: steelblue;
+    border-color: skyblue
+}
+
+.btn-default:active:hover,.btn-default.active:hover,.open>.dropdown-toggle.btn-default:hover,.btn-default:active:focus,.btn-default.active:focus,.open>.dropdown-toggle.btn-default:focus,.btn-default:active.focus,.btn-default.active.focus,.open>.dropdown-toggle.btn-default.focus {
+    color: #ffffff;
+    background-color: steelblue;
+    border-color: skyblue
+}
+
+.navbar-inverse .navbar-nav>.active>a, .navbar-inverse .navbar-nav>.active>a:hover, .navbar-inverse .navbar-nav>.active>a:focus {
+    color: #ffffff;
+    background-color: steelblue;
+}
+
